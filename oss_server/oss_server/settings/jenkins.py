@@ -3,10 +3,14 @@ from .base import *
 INSTALLED_APPS += (
     'base',
     'django_jenkins',
+    'notification',
 )
 
+# A list/tuple of django apps for Jenkins to run. Tests, reports, and coverage
+# are generated only for the apps from this list.
 PROJECT_APPS = (
     'base',
+    'notification',
 )
 
 JENKINS_TASKS = (
