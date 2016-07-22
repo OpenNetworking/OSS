@@ -15,7 +15,7 @@ class Notification(models.Model):
     notification_time = models.DateTimeField(blank=True, null=True)
 
 
-class ConfirmNotification(Notification):
+class TxNotification(Notification):
     tx_id = models.CharField(
         max_length=32,
         validators=[RegexValidator(r'^[0-9a-fA-F]{32}$')]

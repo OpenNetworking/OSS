@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from .forms import ConfirmNotificationForm
+from .forms import TxNotificationForm
 
 
 class CsrfExemptMixin(object):
@@ -19,9 +19,9 @@ class CsrfExemptMixin(object):
         return super(CsrfExemptMixin, self).dispatch(*args, **kwargs)
 
 
-class TxConfirmNotificationView(CsrfExemptMixin, View):
+class TxNotificationView(CsrfExemptMixin, View):
     def post(self, request, *args, **kwargs):
-        form = ConfirmNotificationForm(request.POST)
+        form = TxNotificationForm(request.POST)
         if form.is_valid():
             confirm_notification = form.save()
             response = {'notification_id', confirm_notification.id}

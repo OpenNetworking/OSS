@@ -1,11 +1,11 @@
 from django import forms
 
-from ..models import ConfirmNotification
+from ..models import TxNotification
 
 
-class ConfirmNotificationForm(forms.ModelForm):
+class TxNotificationForm(forms.ModelForm):
     class Meta:
-        model = ConfirmNotification
+        model = TxNotification
         fields = ['tx_id', 'confirm_count', 'callback_url']
         error_messages = {
             'tx_id': {

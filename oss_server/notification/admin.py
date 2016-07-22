@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-from .models import ConfirmNotification
+from .models import TxNotification
 
-admin.site.register(ConfirmNotification)
+admin.site.register(TxNotification)
