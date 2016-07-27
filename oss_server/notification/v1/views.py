@@ -1,11 +1,29 @@
 import httplib
 
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import View
+from django.views.generic import CreateView, DetailView, DeleteView
 
-from .forms import ConfirmNotificationForm
+from ..models import TxSubscription, AddressSubscription
+from .forms import TxSubscriptionModelForm, AddressSubscriptionModelForm
+
+
+def invalid_params_response(errors):
+    params = []
+    for field, error_list in errors.items():
+        params.append({
+            "name": field,
+            "message": ",".join(error_list)
+        })
+
+    response = {
+        "error": {
+            "type": "invalid_request_error",
+            "params": params
+        }
+    }
+    return JsonResponse(response, status=httplib.BAD_REQUEST)
 
 
 class CsrfExemptMixin(object):
@@ -19,14 +37,98 @@ class CsrfExemptMixin(object):
         return super(CsrfExemptMixin, self).dispatch(*args, **kwargs)
 
 
-class TxConfirmNotificationView(CsrfExemptMixin, View):
-    def post(self, request, *args, **kwargs):
-        form = ConfirmNotificationForm(request.POST)
+class BaseSubscriptionCreateView(CsrfExemptMixin, CreateView):
+    success_url = "dummy/url"
+    http_method_names = [u'post']
+
+    def form_valid(self, form):
+        response = super(BaseSubscriptionCreateView, self).form_valid(form)
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def render_to_response(self, context, **response_kwargs):
+        form = context['form']
         if form.is_valid():
-            confirm_notification = form.save()
-            response = {'notification_id', confirm_notification.id}
-            return JsonResponse(response)
+            response = self.object.as_dict()
+            return JsonResponse(response, status=httplib.OK)
         else:
-            errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
-            response = {'error': errors}
-            return JsonResponse(response, status=httplib.BAD_REQUEST)
+            return invalid_params_response(form.errors)
+
+
+class BaseSubscriptionDetailView(DetailView):
+    http_method_names = [u'get']
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super(BaseSubscriptionDetailView, self).get(request, *args, **kwargs)
+        except Http404:
+            response = {
+                "error": {
+                    "type": "invalid_request_error",
+                    "params": [
+                        {
+                            "name": "id",
+                            "message": "not found"
+                        }
+                    ]
+                }
+            }
+            return JsonResponse(response, status=httplib.NOT_FOUND)
+
+    def render_to_response(self, context, **response_kwargs):
+        obj = context['object']
+        response = obj.as_dict()
+        return JsonResponse(response, status=httplib.OK)
+
+
+class BaseSubscriptionDeleteView(CsrfExemptMixin, DeleteView):
+    success_url = "dummy/url"
+    http_method_names = [u'post']
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            object_id = self.get_object().pk
+        except Http404:
+            response = {
+                "error": {
+                    "type": "invalid_request_error",
+                    "params": [
+                        {
+                            "name": "id",
+                            "message": "not found"
+                        }
+                    ]
+                }
+            }
+            return JsonResponse(response, status=httplib.NOT_FOUND)
+
+        super(DeleteView, self).delete(request, *args, **kwargs)
+        response = {
+            "id": str(object_id),
+            "deleted": True
+        }
+        return JsonResponse(response, status=httplib.OK)
+
+
+class AddressSubscriptionCreateView(BaseSubscriptionCreateView):
+    model = AddressSubscription
+    form_class = AddressSubscriptionModelForm
+
+
+class TxSubscriptionCreateView(BaseSubscriptionCreateView):
+    model = TxSubscription
+    form_class = TxSubscriptionModelForm
+
+class AddressSubscriptionDetailView(BaseSubscriptionDetailView):
+    model = AddressSubscription
+
+
+class TxSubscriptionDetailView(BaseSubscriptionDetailView):
+    model = TxSubscription
+
+
+class AddressSubscriptionDeleteView(BaseSubscriptionDeleteView):
+    model = AddressSubscription
+
+class TxSubscriptionDeleteView(BaseSubscriptionDeleteView):
+    model = TxSubscription
+

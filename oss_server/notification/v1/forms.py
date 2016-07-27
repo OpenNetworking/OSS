@@ -1,23 +1,39 @@
 from django import forms
 
-from ..models import ConfirmNotification
+from ..models import AddressSubscription, TxSubscription
 
-
-class ConfirmNotificationForm(forms.ModelForm):
+class AddressSubscriptionModelForm(forms.ModelForm):
     class Meta:
-        model = ConfirmNotification
-        fields = ['tx_id', 'confirm_count', 'callback_url']
+        model = AddressSubscription
+        fields = ['address', 'callback_url']
         error_messages = {
-            'tx_id': {
-                'required': '`tx_id` is required',
-                'invalid': '`tx_id` is invalid'
-            },
-            'confirm_count': {
-                'required': '`confirm_count` is required',
-                'min_value': '`confirm_count` should be greater than 1'
+            'address': {
+                'required': 'address is required',
+                'invalid': 'address is invalid',
             },
             'callback_url': {
-                'required': '`callback_url` is required',
-                'invalid': '`callback_url` is invalid'
+                'required': 'callback_url is required',
+                'invalid': 'callback_url is invalid',
+            }
+        }
+
+class TxSubscriptionModelForm(forms.ModelForm):
+    class Meta:
+        model = TxSubscription
+        fields = ['tx_hash', 'confirmation_count', 'callback_url']
+        error_messages = {
+            'tx_hash': {
+                'required': 'tx_hash is required',
+                'invalid': 'tx_hash is invalid',
+                'max_length': 'tx_hash is at most %(limit_value)s characters'
+            },
+            'confirmation_count': {
+                'required': 'confirmation_count is required',
+                'invalid': 'confirmation_count is invalid',
+                'min_value': 'confirmation_count need to be greater than or equal to 1'
+            },
+            'callback_url': {
+                'required': 'callback_url is required',
+                'invalid': 'callback_url is invalid',
             }
         }
