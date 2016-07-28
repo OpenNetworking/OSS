@@ -7,7 +7,7 @@ from django.test import TestCase
 from ..models import *
 
 
-class TestSetUp:
+class TestSetUp(object):
     def __init__(self):
         self.address1, created = Address.objects.get_or_create(address='126fiiHJY4PCba1NXoPpSSo3kHpZmGYiHB')
         self.address2, created = Address.objects.get_or_create(address='13JGvpZTEm8iUvpjavj3k9SmnwdrhFfcBx')
