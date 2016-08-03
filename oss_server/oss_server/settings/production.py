@@ -2,9 +2,15 @@ from .base import *
 
 DEBUG = False
 
+INSTALLED_APPS += [
+    'base',
+]
+
+ALLOWED_HOSTS = ['*']
+
 # Logger
 
-BASE_MODULE_LOG_FILE = '/tmp/log'
+BASE_MODULE_LOG_DIR = '/opt/oss/log/'
 
 LOGGING = {
     'version': 1,
@@ -12,8 +18,13 @@ LOGGING = {
         'base_log_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': BASE_MODULE_LOG_FILE,
+            'filename': BASE_MODULE_LOG_DIR + 'base.log',
             'formatter': 'api_format'
+        },
+        'django_log_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_MODULE_LOG_DIR + 'django.log',
         }
     },
     'formatters': {
@@ -24,6 +35,10 @@ LOGGING = {
     'loggers': {
         'base': {
             'handlers': ['base_log_file'],
+            'level': 'INFO'
+        },
+        'django': {
+            'handlers': ['django_log_file'],
             'level': 'INFO'
         }
     }

@@ -71,10 +71,10 @@ WSGI_APPLICATION = 'oss_server.wsgi.application'
 # Gcoin RPC
 
 GCOIN_RPC = {
-    'user': '<user>',
-    'password': '<passwrod>',
-    'host': '<host>',
-    'port': '<port>',
+    'user': 'gcoin',
+    'password': '8LwpXVGMW1K5ry1SSsrCtuF1duDcXuQMSZmkUTAsPaUB',
+    'host': 'localhost',
+    'port': '9876',
 }
 
 
@@ -86,15 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'explorer_db': {
-        'NAME': 'explorer_db',
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': '',
-        'PASSWORD': ''
-    }
 }
-
-DATABASE_ROUTERS = ['explorer.router.ExplorerRouter']
 
 
 # Password validation
