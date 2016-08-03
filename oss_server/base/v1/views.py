@@ -51,6 +51,17 @@ class GetLicenseInfoView(View):
             return JsonResponse(response, status=httplib.NOT_FOUND)
 
 
+class GetLicenseView(View):
+
+    def get(self, request):
+        response = get_rpc_connection().getlicenselist()
+        # change key name from 'Total Amount' to 'issued'
+        for key, value in response.items():
+            value['issued'] = value.pop('Total Amount')
+            response[key] = value
+        return JsonResponse(response)
+
+
 class CreateLicenseInfoView(View):
 
     def __init__(self):
