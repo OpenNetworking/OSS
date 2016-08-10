@@ -6,7 +6,7 @@ from collections import OrderedDict
 from django.test import TestCase
 from django.core.serializers.json import DjangoJSONEncoder
 
-from ..models import AddressSubscription, TxSubscription
+from notification.models import AddressSubscription, TxSubscription
 
 
 class AddressSubscriptionTest(TestCase):
