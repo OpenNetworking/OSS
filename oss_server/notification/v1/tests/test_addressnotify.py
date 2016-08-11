@@ -503,6 +503,9 @@ class AddressNotifyDaemonTestCase(TestCase):
         self.txs = [TransactionInfo(**tx) for tx in self.txs]
 
         self.tx_map = {tx.txid: tx for tx in self.txs}
+        self.patcher = mock.patch('notification.daemon.get_rpc_connection')
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
 
     def clean(self):
         AddressSubscription.objects.all().delete()
@@ -512,7 +515,7 @@ class AddressNotifyDaemonTestCase(TestCase):
     @mock.patch('notification.daemon.AddressNotifyDaemon.get_block')
     @mock.patch('notification.daemon.AddressNotifyDaemon.get_best_block')
     @mock.patch('notification.daemon.AddressNotifyDaemon.get_last_seen_block')
-    def test_get_new_blocks(self, mock_get_last_seen_block, mock_get_best_block, mock_get_block):
+    def test_get_new_blocks(self, mock_get_last_seen_block, mock_get_best_block, mock_get_block,):
         mock_get_last_seen_block.return_value = self.blocks[0]
         mock_get_best_block.return_value = self.blocks[-1]
         mock_get_block.side_effect = lambda block_hash: self.block_map[block_hash]

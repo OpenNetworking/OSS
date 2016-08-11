@@ -76,6 +76,10 @@ class TxNotifyDaemonTestCase(TestCase):
             u'size': 330
        }
 
+        self.patcher = mock.patch('notification.daemon.get_rpc_connection')
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
     def clean(self):
         TxSubscription.objects.all().delete()
         TxNotification.objects.all().delete()
