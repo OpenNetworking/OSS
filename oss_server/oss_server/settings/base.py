@@ -135,7 +135,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-LOG_DIR =  os.path.dirname(os.path.dirname(BASE_DIR)) + '/log/'
+LOG_DIR =  os.path.dirname(BASE_DIR) + '/log/'
 LOGGING = {
     'version': 1,
         'disable_existing_loggers': False,
