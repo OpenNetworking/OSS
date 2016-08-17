@@ -1,0 +1,15 @@
+[Unit]
+Description=DiQi OSS
+After=syslog.target
+
+[Service]
+ExecStart=/sbin/uwsgi --ini /etc/diqi-oss/uwsgi.ini
+RuntimeDirectory=uwsgi
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
