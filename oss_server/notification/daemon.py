@@ -32,8 +32,8 @@ class GcoinRPCMixin(object):
     def __init__(self):
         self.conn = get_rpc_connection()
 
-    def get_block(self, tx_hash):
-        return self.conn.getblock(tx_hash)
+    def get_block(self, block_hash):
+        return self.conn.getblock(block_hash)
 
     def get_best_block(self):
         return self.get_block(self.conn.getbestblockhash())
