@@ -8,6 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from gcoinrpc import connect_to_remote
+from gcoinrpc.exceptions import InvalidAddressOrKey
 from tornado import ioloop
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
@@ -118,7 +119,12 @@ class TxNotifyDaemon(GcoinRPCMixin):
                 new_notifications = []
                 for tx_subscription in TxSubscription.objects.filter(txnotification=None):
                     logger.debug('check tx hash: {}'.format(tx_subscription.tx_hash))
-                    tx = self.get_transaction(tx_subscription.tx_hash)
+                    try:
+                        tx = self.get_transaction(tx_subscription.tx_hash)
+                    except InvalidAddressOrKey:
+                        # transaction not found, just skip
+                        continue
+
                     if hasattr(tx, 'confirmations') and tx.confirmations >= tx_subscription.confirmation_count:
                        new_notifications.append(TxNotification(subscription=tx_subscription))
 
