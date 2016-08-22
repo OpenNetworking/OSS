@@ -303,7 +303,7 @@ class AddressNotifyDaemon(GcoinRPCMixin):
         LastSeenBlock.objects.create(name='AddressNotifyDaemon', block_hash=block_hash)
 
     def get_last_seen_block(self):
-        last_block = LastSeenBlock.objects.filter(name='AddressNotifyDaemon').last()
+        last_block = LastSeenBlock.objects.filter(name='AddressNotifyDaemon').latest('id')
         if last_block:
             return self.conn.getblock(last_block.block_hash)
         else:
