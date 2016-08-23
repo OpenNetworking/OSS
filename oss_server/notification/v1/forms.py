@@ -30,7 +30,7 @@ class TxSubscriptionModelForm(forms.ModelForm):
             'confirmation_count': {
                 'required': 'confirmation_count is required',
                 'invalid': 'confirmation_count is invalid',
-                'min_value': 'confirmation_count need to be greater than or equal to 1'
+                'min_value': 'confirmation_count needs to be greater than or equal to 1'
             },
             'callback_url': {
                 'required': 'callback_url is required',

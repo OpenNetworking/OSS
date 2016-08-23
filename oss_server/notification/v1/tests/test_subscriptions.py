@@ -201,7 +201,7 @@ class TxSubscriptionTest(TestCase):
                     },
                     {
                         "name": "confirmation_count",
-                        "message": "confirmation_count need to be greater than or equal to 1"
+                        "message": "confirmation_count needs to be greater than or equal to 1"
                     },
                 ]
             }
