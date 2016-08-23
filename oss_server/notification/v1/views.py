@@ -38,20 +38,15 @@ class CsrfExemptMixin(object):
 
 
 class BaseSubscriptionCreateView(CsrfExemptMixin, CreateView):
-    success_url = "dummy/url"
     http_method_names = [u'post']
 
-    def form_valid(self, form):
-        response = super(BaseSubscriptionCreateView, self).form_valid(form)
-        return self.render_to_response(self.get_context_data(form=form))
+    def form_invalid(self, form):
+        return invalid_params_response(form.errors)
 
-    def render_to_response(self, context, **response_kwargs):
-        form = context['form']
-        if form.is_valid():
-            response = self.object.as_dict()
-            return JsonResponse(response, status=httplib.OK)
-        else:
-            return invalid_params_response(form.errors)
+    def form_valid(self, form):
+        self.object = form.save()
+        response = self.object.as_dict()
+        return JsonResponse(response, status=httplib.OK)
 
 
 class BaseSubscriptionDetailView(DetailView):
