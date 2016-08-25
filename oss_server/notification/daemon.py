@@ -99,6 +99,8 @@ class TxNotifyDaemon(GcoinRPCMixin):
 
         logger.debug("start notify")
         logger.debug("total: {}".format(len(notifications)))
+
+        # block until callback calls ioloop.IOLoop.instance().stop()
         ioloop.IOLoop.instance().start()
 
     def run_forever(self, test=False):
@@ -194,6 +196,7 @@ class AddressNotifyDaemon(GcoinRPCMixin):
 
             client.fetch(request, self._get_callback_func(notification, total))
 
+        # block until callback calls ioloop.IOLoop.instance().stop()
         ioloop.IOLoop.instance().start()
 
     def run_forever(self):
@@ -263,6 +266,9 @@ class AddressNotifyDaemon(GcoinRPCMixin):
     def create_notifications(self, addr_txs_map):
         subscriptions = AddressSubscription.objects.all()
         new_notifications = []
+
+        # Only the address that is in addr_txs_map and subscription need to be notify,
+        # so iterate through the small one is more efficient
         if len(addr_txs_map) < subscriptions.count():
             for address, txs in addr_txs_map.iteritems():
                 for tx in txs:
