@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AddressSubscription, AddressNotification, TxSubscription, TxNotification, LastSeenBlock
+from .models import AddressNotification, AddressSubscription, LastSeenBlock, TxNotification, TxSubscription
 
 
 class TxSubscriptionAdmin(admin.ModelAdmin):
@@ -32,8 +32,8 @@ class LastSeenBlockAdmin(admin.ModelAdmin):
     list_display = ['id', 'block_hash']
 
 
+admin.site.register(AddressNotification, AddressNotificationAdmin)
+admin.site.register(AddressSubscription, AddressSubscriptionAdmin)
+admin.site.register(LastSeenBlock, LastSeenBlockAdmin)
 admin.site.register(TxNotification, TxNotificationAdmin)
 admin.site.register(TxSubscription, TxSubscriptionAdmin)
-admin.site.register(AddressSubscription, AddressSubscriptionAdmin)
-admin.site.register(AddressNotification, AddressNotificationAdmin)
-admin.site.register(LastSeenBlock, LastSeenBlockAdmin)

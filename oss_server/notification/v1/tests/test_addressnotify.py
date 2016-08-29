@@ -6,8 +6,8 @@ import mock
 from gcoinrpc.data import TransactionInfo
 from tornado.httpclient import HTTPResponse
 
-from notification.models import AddressSubscription, AddressNotification, LastSeenBlock
 from notification.daemon import AddressNotifyDaemon
+from notification.models import AddressNotification, AddressSubscription, LastSeenBlock
 
 
 class AddressNotifyDaemonTestCase(TestCase):

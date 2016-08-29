@@ -1,6 +1,6 @@
+import logging
 import time
 import urllib
-import logging
 
 from django.conf import settings
 from django.db import transaction
@@ -12,8 +12,8 @@ from gcoinrpc.exceptions import InvalidAddressOrKey
 from tornado import ioloop
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
-from notification.models import TxSubscription, AddressSubscription
-from notification.models import TxNotification, AddressNotification
+from notification.models import AddressSubscription, TxSubscription
+from notification.models import AddressNotification, TxNotification
 from notification.models import LastSeenBlock
 
 

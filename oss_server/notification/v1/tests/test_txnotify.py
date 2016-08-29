@@ -6,8 +6,8 @@ import mock
 from gcoinrpc.data import TransactionInfo
 from tornado.httpclient import HTTPResponse
 
-from notification.models import TxSubscription, TxNotification
 from notification.daemon import TxNotifyDaemon
+from notification.models import TxNotification, TxSubscription
 
 
 class TxNotifyDaemonTestCase(TestCase):
