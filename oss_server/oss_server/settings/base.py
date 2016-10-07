@@ -71,10 +71,10 @@ WSGI_APPLICATION = 'oss_server.wsgi.application'
 # Gcoin RPC
 
 GCOIN_RPC = {
-    'user': '<user>',
-    'password': '<passwrod>',
-    'host': '<host>',
-    'port': '<port>',
+    'user': 'gcoin',
+    'password': 'abc123',
+    'host': 'store1.diqi.us',
+    'port': '9876',
 }
 
 
@@ -135,7 +135,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-LOG_DIR =  os.path.dirname(BASE_DIR) + '/log/'
+LOG_DIR = os.path.dirname(BASE_DIR) + '/log/'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
