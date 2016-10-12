@@ -129,3 +129,52 @@ class CreateLicenseTransferRawTxForm(forms.Form):
         'min_value': '`color_id` should be greater than or equal to %(limit_value)s',
         'max_value': '`color_id` should be less than or equal to %(limit_value)s'
     })
+
+
+class ExchangeRawTxForm(forms.Form):
+    fee_address = AddressField(error_messages={
+        'required': '`fee_address` is required',
+        'invalid': '`fee_address` is not an address'
+    })
+    address1 = AddressField(error_messages={
+        'required': '`address1` is required',
+        'invalid': '`address1` is not an address'
+    })
+    address2 = AddressField(error_messages={
+        'required': '`address2` is required',
+        'invalid': '`address2` is not an address'
+    })
+    color_id1 = ColorField(error_messages={
+        'required': '`color_id1` is required',
+        'invalid': '`color_id1` is invalid',
+        'min_value': '`color_id1` should be greater than or equal to %(limit_value)s',
+        'max_value': '`color_id1` should be less than or equal to %(limit_value)s'
+    })
+    color_id2 = ColorField(error_messages={
+        'required': '`color_id2` is required',
+        'invalid': '`color_id2` is invalid',
+        'min_value': '`color_id2` should be greater than or equal to %(limit_value)s',
+        'max_value': '`color_id2` should be less than or equal to %(limit_value)s'
+    })
+    amount1 = TxAmountField(error_messages={
+        'required': '`amount1` is required',
+        'invalid': '`amount1` is invalid',
+        'min_value': '`amount1` should be greater than or equal to %(limit_value)s',
+        'max_value': '`amount1` should be less than or equal to %(limit_value)s',
+        'max_decimal_places': '`amount1` only allow up to %(max)s decimal digits'
+    })
+    amount2 = TxAmountField(error_messages={
+        'required': '`amount2` is required',
+        'invalid': '`amount2` is invalid',
+        'min_value': '`amount2` should be greater than or equal to %(limit_value)s',
+        'max_value': '`amount2` should be less than or equal to %(limit_value)s',
+        'max_decimal_places': '`amount2` only allow up to %(max)s decimal digits'
+    })
+
+    def clean(self):
+        address1 = self.cleaned_data.get('address1')
+        address2 = self.cleaned_data.get('address2')
+
+        if address1 and address2:
+            if address1 == address2:
+                raise forms.ValidationError("`address1` and `address2` can't be the same")

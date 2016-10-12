@@ -11,9 +11,8 @@ from gcoin import (encode_license, make_mint_raw_tx, make_raw_tx,
 from gcoinrpc import connect_to_remote
 from gcoinrpc.exceptions import InvalidAddressOrKey, InvalidParameter
 
+from .forms import *
 from ..utils import balance_from_utxos, select_utxo, utxo_to_txin
-from .forms import (CreateLicenseRawTxForm, CreateLicenseTransferRawTxForm,
-                    CreateSmartContractRawTxForm, MintRawTxForm, RawTxForm)
 
 logger = logging.getLogger(__name__)
 
@@ -315,3 +314,68 @@ class CreateLicenseTransferRawTxView(View):
             if utxo['color'] == color:
                 return utxo
         return None
+
+
+class CreateExchangeRawTxView(View):
+
+    def get(self, request, *args, **kwargs):
+        form = ExchangeRawTxForm(request.GET)
+
+        if not form.is_valid():
+            errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
+            response = {'error': errors}
+            return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+        fee_address = form.cleaned_data['fee_address']
+        address1 = form.cleaned_data['address1']
+        address2 = form.cleaned_data['address2']
+        color_id1 = form.cleaned_data['color_id1']
+        color_id2 = form.cleaned_data['color_id2']
+        amount1 = form.cleaned_data['amount1']
+        amount2 = form.cleaned_data['amount2']
+
+        ins = []
+        outs = []
+        fee_included = False
+
+        for address, color_id, amount in [(address1, color_id1, amount1), (address2, color_id2, amount2)]:
+            utxos = get_rpc_connection().gettxoutaddress(address)
+
+            inputs = select_utxo(utxos, color_id, amount)
+            if not inputs:
+                return JsonResponse({'error': 'insufficient funds'}, status=httplib.BAD_REQUEST)
+
+            inputs_value = balance_from_utxos(inputs)[color_id]
+            change = inputs_value - amount
+
+            if color_id == 1 and address == fee_address:
+                inputs = select_utxo(utxos, color_id, amount + 1)
+                if not inputs:
+                    return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
+                fee_included = True
+                inputs_value = balance_from_utxos(inputs)[color_id]
+                change = inputs_value - amount - 1
+
+            if change:
+                outs.append({'address': address,
+                             'value': int(change * 10**8), 'color': color_id})
+
+            ins += [utxo_to_txin(utxo) for utxo in inputs]
+
+        if not fee_included:
+            fee_address_utxos = get_rpc_connection().gettxoutaddress(fee_address)
+            inputs = select_utxo(fee_address_utxos, 1, 1)
+            if not inputs:
+                return JsonResponse({'error': 'insufficient fee in fee_address'}, status=httplib.BAD_REQUEST)
+            ins += [utxo_to_txin(utxo) for utxo in inputs]
+            inputs_value = balance_from_utxos(inputs)[1]
+            change = inputs_value - 1
+
+            if change:
+                outs.append({'address': fee_address,
+                             'value': int(change * 10**8), 'color': 1})
+
+        outs.append({'address': address1, 'value': int(amount2 * 10**8), 'color': color_id2})
+        outs.append({'address': address2, 'value': int(amount1 * 10**8), 'color': color_id1})
+        raw_tx = make_raw_tx(ins, outs)
+        return JsonResponse({'raw_tx': raw_tx})
