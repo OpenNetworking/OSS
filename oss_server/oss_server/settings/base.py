@@ -71,10 +71,10 @@ WSGI_APPLICATION = 'oss_server.wsgi.application'
 # Gcoin RPC
 
 GCOIN_RPC = {
-    'user': 'gcoin',
-    'password': 'abc123',
-    'host': 'store1.diqi.us',
-    'port': '9876',
+    'user': '<user>',
+    'password': '<password>',
+    'host': '<host>',
+    'port': '<port>',
 }
 
 

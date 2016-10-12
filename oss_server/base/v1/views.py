@@ -1,7 +1,5 @@
 import httplib
-import json
 import logging
-from decimal import Decimal
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -13,8 +11,7 @@ from gcoin import (encode_license, make_mint_raw_tx, make_raw_tx,
 from gcoinrpc import connect_to_remote
 from gcoinrpc.exceptions import InvalidAddressOrKey, InvalidParameter
 
-from .forms import (CreateLicenseRawTxForm, CreateLicenseTransferRawTxForm,
-                    CreateSmartContractRawTxForm, MintRawTxForm, RawTxForm)
+from .forms import *
 from ..utils import balance_from_utxos, select_utxo, utxo_to_txin
 
 logger = logging.getLogger(__name__)
@@ -319,72 +316,66 @@ class CreateLicenseTransferRawTxView(View):
         return None
 
 
-class CreateExchangeRawTxView(CsrfExemptMixin, View):
+class CreateExchangeRawTxView(View):
 
-    def post(self, request, *args, **kwargs):
-        if request.META['CONTENT_TYPE'] != 'application/json':
-            return JsonResponse({'error': "only accept 'application/json' as Content-Type"})
+    def get(self, request, *args, **kwargs):
+        form = ExchangeRawTxForm(request.GET)
 
-        json_obj = json.loads(request.body, parse_float=Decimal)
-        print(json_obj)
-        try:
-            self._validate_json_obj(json_obj)
-        except KeyError as e:
-            return JsonResponse({'error': e.message})
+        if not form.is_valid():
+            errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
+            response = {'error': errors}
+            return JsonResponse(response, status=httplib.BAD_REQUEST)
 
-        addr_in_map = {}
-        addr_out_map = {}
+        fee_address = form.cleaned_data['fee_address']
+        address1 = form.cleaned_data['address1']
+        address2 = form.cleaned_data['address2']
+        color_id1 = form.cleaned_data['color_id1']
+        color_id2 = form.cleaned_data['color_id2']
+        amount1 = form.cleaned_data['amount1']
+        amount2 = form.cleaned_data['amount2']
 
         ins = []
         outs = []
+        fee_included = False
 
-        # check if fee_address has enough fee.
-        utxos = get_rpc_connection().gettxoutaddress(json_obj['fee_address'])
-        inputs = select_utxo(utxos=utxos, color=1, sum=1)
-        if not inputs:
-            return JsonResponse({'error': 'insufficient fee in address {}'.format(json_obj['fee_address'])})
-        ins += [utxo_to_txin(utxo) for utxo in inputs]
-        # the exchange part
-        for tx in json_obj['txs']:
-            addr1_in = addr_in_map.setdefault(tx['address1'], {})
-            addr1_in[tx['color1']] = addr1_in.get(tx['color1'], 0) + tx['amount1']
-            addr2_in = addr_in_map.setdefault(tx['address2'], {})
-            addr2_in[tx['color2']] = addr1_in.get(tx['color2'], 0) + tx['amount2']
+        for address, color_id, amount in [(address1, color_id1, amount1), (address2, color_id2, amount2)]:
+            utxos = get_rpc_connection().gettxoutaddress(address)
 
-            addr1_out = addr_out_map.setdefault(tx['address1'], {})
-            addr1_out[tx['color2']] = addr1_in.get(tx['color2'], 0) + tx['amount2']
-            addr2_out = addr_out_map.setdefault(tx['address2'], {})
-            addr2_out[tx['color1']] = addr1_in.get(tx['color1'], 0) + tx['amount1']
+            inputs = select_utxo(utxos, color_id, amount)
+            if not inputs:
+                return JsonResponse({'error': 'insufficient funds'}, status=httplib.BAD_REQUEST)
 
-        for addr, color_amount_map in addr_in_map.items():
-            utxos = get_rpc_connection().gettxoutaddress(addr)
-            for color, amount in color_amount_map.items():
-                inputs = select_utxo(utxos=utxos, color=color, sum=amount)
+            inputs_value = balance_from_utxos(inputs)[color_id]
+            change = inputs_value - amount
+
+            if color_id == 1 and address == fee_address:
+                inputs = select_utxo(utxos, color_id, amount + 1)
                 if not inputs:
-                    return JsonResponse({
-                        'error': 'address {} does not have enough color {} to exchange'.format(addr, color)
-                    })
-                ins += [utxo_to_txin(utxo) for utxo in inputs]
+                    return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
+                fee_included = True
+                inputs_value = balance_from_utxos(inputs)[color_id]
+                change = inputs_value - amount - 1
 
-        for addr, color_amount_map in addr_out_map.items():
-            for color, amount in color_amount_map.items():
-                outs = [{'address': addr, 'value': int(amount * 10**8), 'color': color}]
+            if change:
+                outs.append({'address': address,
+                             'value': int(change * 10**8), 'color': color_id})
 
+            ins += [utxo_to_txin(utxo) for utxo in inputs]
+
+        if not fee_included:
+            fee_address_utxos = get_rpc_connection().gettxoutaddress(fee_address)
+            inputs = select_utxo(fee_address_utxos, 1, 1)
+            if not inputs:
+                return JsonResponse({'error': 'insufficient fee in fee_address'}, status=httplib.BAD_REQUEST)
+            ins += [utxo_to_txin(utxo) for utxo in inputs]
+            inputs_value = balance_from_utxos(inputs)[1]
+            change = inputs_value - 1
+
+            if change:
+                outs.append({'address': fee_address,
+                             'value': int(change * 10**8), 'color': 1})
+
+        outs.append({'address': address1, 'value': int(amount2 * 10**8), 'color': color_id2})
+        outs.append({'address': address2, 'value': int(amount1 * 10**8), 'color': color_id1})
         raw_tx = make_raw_tx(ins, outs)
         return JsonResponse({'raw_tx': raw_tx})
-
-    def _validate_json_obj(self, json_obj):
-        for key in ('fee_address', 'txs'):
-            if key not in json_obj:
-                raise KeyError('missing key: {}'.format(key))
-        for tx in json_obj['txs']:
-            for key in ('address1', 'color1', 'amount1', 'address2', 'color2', 'amount2'):
-                if key not in tx:
-                    raise KeyError('missing key in tx: {}'.format(key))
-
-    def _extract_addr_in_json(self, json_obj):
-        addr_set = set(json_obj['fee_address'])
-        for tx in json_obj['txs']:
-            addr_set.add(tx['address1'])
-            addr_set.add(tx['address2'])
-        return addr_set
