@@ -66,7 +66,7 @@ class GetColorTxsView(View):
         return JsonResponse(response)
 
 
-class GetAddressTxsView(View):
+class GetAddressTxOutsView(View):
     def get(self, request, address):
         starting_after = request.GET.get('starting_after', None)
 
@@ -80,7 +80,30 @@ class GetAddressTxsView(View):
             return JsonResponse(response, status=httplib.NOT_FOUND)
 
         if len(txs) > 0 and txs.has_next():
-            page['next_uri'] = '/explorer/v1/transactions/address/' + address + '?starting_after=' + txs[-1].hash
+            page['next_uri'] = '/explorer/v1/transactions/out/address/' + address + '?starting_after=' + txs[-1].hash
+
+        response = {
+            'page': page,
+            'txs': [tx.as_dict() for tx in txs]
+        }
+        return JsonResponse(response)
+
+
+class GetAddressTxInsView(View):
+    def get(self, request, address):
+        starting_after = request.GET.get('starting_after', None)
+
+        # tx should be in main chain, and distinct() prevents duplicate object
+        tx_list = Tx.objects.filter(tx_in__address__address=address, block__in_longest=1).distinct()
+
+        try:
+            page, txs = tx_pagination(tx_list, starting_after)
+        except TxNotFoundException:
+            response = {'error': 'tx not exist'}
+            return JsonResponse(response, status=httplib.NOT_FOUND)
+
+        if len(txs) > 0 and txs.has_next():
+            page['next_uri'] = '/explorer/v1/transactions/in/address/' + address + '?starting_after=' + txs[-1].hash
 
         response = {
             'page': page,
