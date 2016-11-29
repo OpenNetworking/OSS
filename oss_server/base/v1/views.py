@@ -62,8 +62,8 @@ class CreateLicenseRawTxView(View):
         self._conn = get_rpc_connection()
         self.TX_LICENSE_TYPE = 2
 
-    def get(self, request):
-        form = CreateLicenseRawTxForm(request.GET)
+    def post(self, request):
+        form = CreateLicenseRawTxForm(request.POST)
         if form.is_valid():
             color_id = form.cleaned_data['color_id']
             to_address = form.cleaned_data['to_address']
@@ -129,8 +129,8 @@ class CreateSmartContractRawTxView(View):
     DEFAULT_CONTRACT_FEE = 1
     TX_CONTRACT_TYPE = 5
 
-    def get(self, request):
-        form = CreateSmartContractRawTxForm(request.GET)
+    def post(self, request):
+        form = CreateSmartContractRawTxForm(request.POST)
         if form.is_valid():
             address = form.cleaned_data['address']
             oracles_multisig_address = form.cleaned_data['oracles_multisig_address']
@@ -192,8 +192,8 @@ class GetRawTxView(View):
 
 class CreateRawTxView(View):
 
-    def get(self, request, *args, **kwargs):
-        form = RawTxForm(request.GET)
+    def post(self, request, *args, **kwargs):
+        form = RawTxForm(request.POST)
         if form.is_valid():
             from_address = form.cleaned_data['from_address']
             to_address = form.cleaned_data['to_address']
@@ -271,8 +271,8 @@ class GetBalanceView(View):
 
 class CreateMintRawTxView(View):
 
-    def get(self, request, *args, **kwargs):
-        form = MintRawTxForm(request.GET)
+    def post(self, request, *args, **kwargs):
+        form = MintRawTxForm(request.POST)
         if form.is_valid():
             mint_address = form.cleaned_data['mint_address']
             color_id = form.cleaned_data['color_id']
@@ -288,8 +288,8 @@ class CreateMintRawTxView(View):
 
 class CreateLicenseTransferRawTxView(View):
 
-    def get(self, request, *args, **kwargs):
-        form = CreateLicenseTransferRawTxForm(request.GET)
+    def post(self, request, *args, **kwargs):
+        form = CreateLicenseTransferRawTxForm(request.POST)
         if form.is_valid():
             from_address = form.cleaned_data['from_address']
             to_address = form.cleaned_data['to_address']

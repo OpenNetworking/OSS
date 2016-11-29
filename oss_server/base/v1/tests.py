@@ -159,7 +159,7 @@ class CreateLicenseRawTxTest(TestCase):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
         mock_rpc().getlicenseinfo.side_effect = InvalidParameter({'code': -8,
                                                                   'message': 'License color not exist.'})
-        response = self.client.get(self.url, self.sample_params)
+        response = self.client.post(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.OK)
         self.assertIn('raw_tx', response.json())
 
@@ -170,7 +170,7 @@ class CreateLicenseRawTxTest(TestCase):
         for field in required_field:
             miss_field_params = dict(self.sample_params)
             del miss_field_params[field]
-            response = self.client.get(self.url, miss_field_params)
+            response = self.client.post(self.url, miss_field_params)
             self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
     @mock.patch('base.v1.views.get_rpc_connection')
@@ -179,7 +179,7 @@ class CreateLicenseRawTxTest(TestCase):
         for field in field_max_len:
             wrong_len_field_params = dict(self.sample_params)
             wrong_len_field_params[field] = 'x' * (field_max_len[field] + 1)
-            response = self.client.get(self.url, wrong_len_field_params)
+            response = self.client.post(self.url, wrong_len_field_params)
             self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
     @mock.patch('base.v1.views.get_rpc_connection')
@@ -187,13 +187,13 @@ class CreateLicenseRawTxTest(TestCase):
         mock_rpc().gettxoutaddress.return_value = None
         mock_rpc().getlicenseinfo.side_effect = InvalidParameter({'code': -8,
                                                                   'message': 'License color not exist.'})
-        response = self.client.get(self.url, self.sample_params)
+        response = self.client.post(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_license_already_exists(self, mock_rpc):
         mock_rpc().getlicenseinfo.return_value = self.sample_license
-        response = self.client.get(self.url, self.sample_params)
+        response = self.client.post(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
 
@@ -220,7 +220,7 @@ class CreateSmartContractRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_tx(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, self.sample_params)
+        response = self.client.post(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.OK)
         self.assertIn('raw_tx', response.json())
 
@@ -229,14 +229,14 @@ class CreateSmartContractRawTxTest(TestCase):
         for field in required_field:
             miss_field_params = dict(self.sample_params)
             del miss_field_params[field]
-            response = self.client.get(self.url, miss_field_params)
+            response = self.client.post(self.url, miss_field_params)
             self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_balance_not_enough(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = None
         
-        response = self.client.get(self.url, self.sample_params)
+        response = self.client.post(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
 
@@ -299,7 +299,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_using_color1(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 1,
                                               'amount': 1})
@@ -309,7 +309,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_using_other_color(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 2,
                                               'amount': 10})
@@ -320,7 +320,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_with_color1_without_sufficient_fee(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 1,
                                               'amount': 2})
@@ -330,7 +330,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_with_color1_without_sufficient_fee(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress_without_fee
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 2,
                                               'amount': 10})
@@ -341,7 +341,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_with_color1_without_sufficient_funds(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 1,
                                               'amount': 3})
@@ -351,7 +351,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_with_color1_without_sufficient_funds(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 2,
                                               'amount': 11})
@@ -361,7 +361,7 @@ class CreateRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_raw_tx_with_amount_exceed_8_decimal_digit(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 1,
                                               'amount': 0.123456789})
@@ -369,7 +369,7 @@ class CreateRawTxTest(TestCase):
         self.assertEqual(response.json(), {'error': '`amount` only allow up to 8 decimal digits'})
 
     def test_missing_form_data(self):
-        response = self.client.get(self.url, {})
+        response = self.client.post(self.url, {})
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
 
@@ -406,14 +406,14 @@ class CreateMintRawTxTest(TestCase):
         self.mint_address = '17nJ6HR8aiNhNf6f7UTm5fRT6DDGCCJ9Rt'
 
     def test_create_raw_tx_using_color1(self):
-        response = self.client.get(self.url, {'mint_address': self.mint_address,
+        response = self.client.post(self.url, {'mint_address': self.mint_address,
                                               'color_id': 1,
                                               'amount': 1})
         self.assertEqual(response.status_code, httplib.OK)
         self.assertIn('raw_tx', response.json())
 
     def test_missing_form_data(self):
-        response = self.client.get(self.url, {})
+        response = self.client.post(self.url, {})
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
 
@@ -439,24 +439,24 @@ class CreateLicenseTransferRawTxTest(TestCase):
     @mock.patch('base.v1.views.get_rpc_connection')
     def test_create_license_raw_tx(self, mock_rpc):
         mock_rpc().gettxoutaddress.return_value = self.sample_license_txoutaddress
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 1})
         self.assertEqual(response.status_code, httplib.OK)
         self.assertIn('raw_tx', response.json())
 
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 2})
         self.assertEqual(response.status_code, httplib.OK)
         self.assertIn('raw_tx', response.json())
 
-        response = self.client.get(self.url, {'from_address': self.from_address,
+        response = self.client.post(self.url, {'from_address': self.from_address,
                                               'to_address': self.to_address,
                                               'color_id': 3})
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
         self.assertEqual(response.json(), {'error': 'insufficient funds'})
 
     def test_missing_form_data(self):
-        response = self.client.get(self.url, {})
+        response = self.client.post(self.url, {})
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
