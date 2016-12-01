@@ -12,8 +12,7 @@ from gcoinrpc import connect_to_remote
 from gcoinrpc.exceptions import InvalidAddressOrKey, InvalidParameter
 
 from ..utils import balance_from_utxos, select_utxo, utxo_to_txin
-from .forms import (CreateLicenseRawTxForm, CreateLicenseTransferRawTxForm,
-                    CreateSmartContractRawTxForm, MintRawTxForm, RawTxForm)
+from .forms import *
 
 logger = logging.getLogger(__name__)
 
@@ -123,62 +122,6 @@ class CreateLicenseRawTxView(View):
         return mk_op_return_script(license_hex)
 
 
-class CreateSmartContractRawTxView(CsrfExemptMixin, View):
-    FEE_COLOR = 1
-    TX_FEE = 1
-    DEFAULT_CONTRACT_FEE = 1
-    TX_CONTRACT_TYPE = 5
-
-    def post(self, request, *args, **kwargs):
-        form = CreateSmartContractRawTxForm(request.POST)
-        if form.is_valid():
-            address = form.cleaned_data['address']
-            oracles_multisig_address = form.cleaned_data['oracles_multisig_address']
-            code = form.cleaned_data['code']
-            contract_fee = form.cleaned_data['contract_fee'] or self.DEFAULT_CONTRACT_FEE
-
-            utxos = get_rpc_connection().gettxoutaddress(address)
-            total_fee = contract_fee + self.TX_FEE
-            inputs = select_utxo(utxos=utxos, color=self.FEE_COLOR, sum=total_fee)
-            if not inputs:
-                return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
-
-            ins = [utxo_to_txin(utxo) for utxo in inputs]
-
-            outs = self._build_txouts(address, oracles_multisig_address, code, contract_fee, inputs)
-
-            raw_tx = make_raw_tx(ins, outs, self.TX_CONTRACT_TYPE)
-            return JsonResponse({'raw_tx': raw_tx})
-        else:
-            errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
-            response = {'error': errors}
-            return JsonResponse(response, status=httplib.BAD_REQUEST)
-
-    def _build_txouts(self, address, oracles_multisig_address, code, contract_fee, utxo_inputs):
-        outs = [
-            {
-                'address': oracles_multisig_address,
-                'value': int(contract_fee * (10**8)),
-                'color': self.FEE_COLOR
-            },
-            {
-                'script': mk_op_return_script(code),
-                'value': 0,
-                'color': 0
-            }
-        ]
-
-        change = balance_from_utxos(utxo_inputs)[self.FEE_COLOR] - contract_fee - self.TX_FEE
-        if change:
-            outs.append({
-                'address': address,
-                'value': int(change * (10**8)),
-                'color': self.FEE_COLOR
-            })
-
-        return outs
-
-
 class GetRawTxView(View):
 
     def get(self, request, tx_id, *args, **kwargs):
@@ -190,71 +133,79 @@ class GetRawTxView(View):
             return JsonResponse(response, status=httplib.NOT_FOUND)
 
 
-class CreateRawTxView(View):
+class CreateRawTxView(CsrfExemptMixin, View):
 
-    def get(self, request, *args, **kwargs):
-        form = RawTxForm(request.GET)
-        if form.is_valid():
-            from_address = form.cleaned_data['from_address']
-            to_address = form.cleaned_data['to_address']
-            color_id = form.cleaned_data['color_id']
-            amount = form.cleaned_data['amount']
-            op_return_data = form.cleaned_data['op_return_data']
+    def post(self, request, *args, **kwargs):
+        form = RawTxForm(request.POST)
 
-            utxos = get_rpc_connection().gettxoutaddress(from_address)
-            # Color 1 is used as fee, so here's special case for it.
-            if color_id == 1:
-                if not select_utxo(utxos, color_id, amount):
-                    return JsonResponse({'error': 'insufficient funds'}, status=httplib.BAD_REQUEST)
-                inputs = select_utxo(utxos, color_id, amount + 1)
-                if not inputs:
-                    return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
-            else:
-                inputs = select_utxo(utxos, color_id, amount)
-                if not inputs:
-                    return JsonResponse({'error': 'insufficient funds'}, status=httplib.BAD_REQUEST)
-                fee = select_utxo(utxos, 1, 1)
-                if not fee:
-                    return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
-                inputs += fee
-
-            ins = [utxo_to_txin(utxo) for utxo in inputs]
-            outs = [{'address': to_address, 'value': int(amount * 10**8), 'color': color_id}]
-            # Now for the `change` part.
-            if color_id == 1:
-                inputs_value = balance_from_utxos(inputs)[color_id]
-                change = inputs_value - amount - 1
-                if change:
-                    outs.append({'address': from_address,
-                                 'value': int(change * 10**8), 'color': color_id})
-            else:
-                inputs_value = balance_from_utxos(inputs)[color_id]
-                change = inputs_value - amount
-                if change:
-                    outs.append({'address': from_address,
-                                 'value': int(change * 10**8), 'color': color_id})
-                # Fee `change`.
-                fee_value = balance_from_utxos(inputs)[1]
-                fee_change = fee_value - 1
-                if fee_change:
-                    outs.append({'address': from_address,
-                                 'value': int(fee_change * 10**8), 'color': 1})
-
-            if op_return_data:
-                outs.append({
-                    'script': mk_op_return_script(op_return_data.encode('utf8')),
-                    'value': 0,
-                    'color': 0
-                })
-                raw_tx = make_raw_tx(ins, outs, 5)  # contract type
-            else:
-                raw_tx = make_raw_tx(ins, outs)
-
-            return JsonResponse({'raw_tx': raw_tx})
-        else:
+        if not form.is_valid():
             errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
             response = {'error': errors}
             return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+        from_address = form.cleaned_data['from_address']
+        to_address = form.cleaned_data['to_address']
+        color_id = form.cleaned_data['color_id']
+        amount = form.cleaned_data['amount']
+        op_return_data = form.cleaned_data['op_return_data']
+        fee = form.cleaned_data['fee'] or 1
+
+        utxos = get_rpc_connection().gettxoutaddress(from_address)
+
+        # Check if there's sufficient amount of `color_id`.
+        inputs = select_utxo(utxos, color_id, amount)
+        if not inputs and amount != 0:
+            return JsonResponse({'error': 'insufficient funds'}, status=httplib.BAD_REQUEST)
+
+        # Check if there's sufficient fee.
+        if color_id == 1:
+            # We have to include `amount` here so we don't have duplicated utxos.
+            fee_inputs = select_utxo(utxos, 1, amount + fee)
+        else:
+            fee_inputs = select_utxo(utxos, 1, fee)
+        if not fee_inputs:
+            return JsonResponse({'error': 'insufficient fee'}, status=httplib.BAD_REQUEST)
+
+        # Add fee utxo to input
+        if color_id == 1:
+            inputs = fee_inputs
+        else:
+            inputs += fee_inputs
+
+        ins = [utxo_to_txin(utxo) for utxo in inputs]
+        outs = [{'address': to_address, 'value': int(amount * 10**8), 'color': color_id}]
+
+        # Now for the `change` part.
+        if color_id == 1:
+            inputs_value = balance_from_utxos(inputs)[color_id]
+            change = inputs_value - (amount + fee)
+            if change:
+                outs.append({'address': from_address,
+                             'value': int(change * 10**8), 'color': color_id})
+        else:
+            inputs_value = balance_from_utxos(inputs).get(color_id, 0)
+            change = inputs_value - amount
+            if change:
+                outs.append({'address': from_address,
+                             'value': int(change * 10**8), 'color': color_id})
+            # Fee `change`.
+            color1_value = balance_from_utxos(inputs)[1]
+            fee_change = color1_value - fee
+            if fee_change:
+                outs.append({'address': from_address,
+                             'value': int(fee_change * 10**8), 'color': 1})
+
+        if op_return_data:
+            outs.append({
+                'script': mk_op_return_script(op_return_data.encode('utf8')),
+                'value': 0,
+                'color': 0
+            })
+            raw_tx = make_raw_tx(ins, outs, 5)  # contract type
+        else:
+            raw_tx = make_raw_tx(ins, outs)
+
+        return JsonResponse({'raw_tx': raw_tx})
 
 
 class SendRawTxView(CsrfExemptMixin, View):

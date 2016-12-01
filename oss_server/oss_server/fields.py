@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 import gcoin
 
-__all__ = ('AddressField', 'ColorField', 'MintAmountField', 'TxAmountField')
+__all__ = ('AddressField', 'ColorField', 'FeeAmountField', 'MintAmountField', 'TxAmountField')
 
 
 def address_validator(value):
@@ -42,3 +42,8 @@ class MintAmountField(forms.IntegerField):
 class TxAmountField(forms.DecimalField):
     def __init__(self, *args, **kwargs):
         super(TxAmountField, self).__init__(decimal_places=8, max_value=10**10, min_value=0, *args, **kwargs)
+
+
+class FeeAmountField(forms.DecimalField):
+    def __init__(self, *args, **kwargs):
+        super(FeeAmountField, self).__init__(decimal_places=8, max_value=10**10, min_value=1, *args, **kwargs)
