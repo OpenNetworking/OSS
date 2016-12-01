@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import CharField
 
-from oss_server.fields import AddressField, ColorField, MintAmountField, TxAmountField
+from oss_server.fields import *
 
 
 class CreateLicenseRawTxForm(forms.Form):
@@ -43,27 +43,6 @@ class CreateLicenseRawTxForm(forms.Form):
                                      })
 
 
-class CreateSmartContractRawTxForm(forms.Form):
-    address = AddressField(error_messages={
-        'required': '`address` is required',
-        'invalid': '`address` is not an address'
-    })
-    oracles_multisig_address = AddressField(error_messages={
-        'required': '`oracles_multisig_address` is required',
-        'invalid': '`oracles_multisig_address` is not an address'
-    })
-    code = forms.CharField(max_length=128000,
-                           error_messages={
-                               'required': '`code` is required',
-                               'max_length': 'length of `code` should not exceed %(limit_value)s'
-                           })
-    contract_fee = forms.IntegerField(max_value=10**10, min_value=1, required=False,
-                                      error_messages={
-                                          'min_value': '`contract_fee` should be greater than or equal to %(limit_value)s',
-                                          'max_value': '`contract_fee` should be less than or equal to %(limit_value)s'
-                                      })
-
-
 class RawTxForm(forms.Form):
     from_address = AddressField(error_messages={
         'required': '`from_address` is required',
@@ -86,6 +65,13 @@ class RawTxForm(forms.Form):
         'max_value': '`amount` should be less than or equal to %(limit_value)s',
         'max_decimal_places': '`amount` only allow up to %(max)s decimal digits'
     })
+    fee = FeeAmountField(required=False,
+                         error_messages={
+                             'invalid': '`fee` is invalid',
+                             'min_value': '`fee` should be greater than or equal to %(limit_value)s',
+                             'max_value': '`fee` should be less than or equal to %(limit_value)s',
+                             'max_decimal_places': '`fee` only allow up to %(max)s decimal digits'
+                         })
     op_return_data = CharField(required=False)
 
     def clean_op_return_data(self):
