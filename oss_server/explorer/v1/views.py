@@ -1,5 +1,9 @@
 import httplib
 
+import time
+import datetime
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.generic import View
@@ -11,8 +15,28 @@ from ..pagination import *
 
 class GetLatestBlocksView(View):
     def get(self, request):
-        latest_blocks = Block.objects.filter(in_longest=1)[:50]
-        response = {'blocks': [block.as_dict() for block in latest_blocks]}
+        page = request.GET.get('page')
+        page_size = request.GET.get('page_size')
+        since = request.GET.get('since')
+        until = request.GET.get('until')
+
+        page = page or 1
+        page_size = page_size or 50
+
+        since = since or 0
+        until = until or time.time()
+
+        block_list = Block.objects.filter(in_longest=1, time__range=(since, until))
+        paginator = Paginator(block_list, page_size)
+
+        try:
+            blocks = paginator.page(page)
+        except PageNotAnInteger:
+            blocks = paginator.page(1)
+        except EmptyPage:
+            blocks = paginator.page(paginator.num_pages)
+
+        response = {'blocks': [block.as_dict() for block in blocks]}
         return JsonResponse(response)
 
 
