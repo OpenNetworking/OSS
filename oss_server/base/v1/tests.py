@@ -196,6 +196,30 @@ class CreateLicenseRawTxTest(TestCase):
         response = self.client.get(self.url, self.sample_params)
         self.assertEqual(response.status_code, httplib.BAD_REQUEST)
 
+class CompileSmartContractTest(TestCase):
+
+    def setUp(self):
+        self.url = '/base/v1/smartcontract/compile'
+        self.sample_params = {
+            'source_code': 'contract Test {int public demo;  bytes public dynamic;  function Owned(int aa, bytes bb){demo = aa; dynamic = bb;}}',
+            'contract_name': 'Test',
+        }
+
+    def test_compile_smart_contract(self):
+        response = self.client.post(self.url, self.sample_params)
+        self.assertEqual(response.status_code, httplib.OK)
+        self.assertIn('interface', response.json())
+        self.assertIn('byte_code', response.json())
+
+    def test_miss_field_form(self):
+        required_field = ['source_code', 'contract_name']
+        for field in required_field:
+            miss_field_params = dict(self.sample_params)
+            del miss_field_params[field]
+            response = self.client.post(self.url, miss_field_params)
+            self.assertEqual(response.status_code, httplib.BAD_REQUEST)
+
+
 
 class CreateSmartContractRawTxTest(TestCase):
 

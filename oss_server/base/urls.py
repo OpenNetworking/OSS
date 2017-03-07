@@ -13,6 +13,7 @@ urlpatterns = [
     url('^v1/license/send$', SendRawTxView.as_view()),
     url('^v1/mint/prepare$', CreateMintRawTxView.as_view()),
     url('^v1/mint/send$', SendRawTxView.as_view()),
+    url('^v1/smartcontract/compile$', CompileSmartContractView.as_view()),
     url('^v1/smartcontract/prepare$', CreateSmartContractRawTxView.as_view()),
     url('^v1/smartcontract/send$', SendRawTxView.as_view()),
     url('^v1/transaction/prepare$', CreateRawTxView.as_view()),

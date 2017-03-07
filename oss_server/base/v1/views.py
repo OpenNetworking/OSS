@@ -15,10 +15,12 @@ from gcoinrpc import connect_to_remote
 from gcoinrpc.exceptions import InvalidAddressOrKey, InvalidParameter
 
 from oss_server.utils import address_validator
-
+from solc import compile_source
 from ..utils import balance_from_utxos, select_utxo, utxo_to_txin
 from .forms import (CreateLicenseRawTxForm, CreateLicenseTransferRawTxForm,
-                    CreateSmartContractRawTxForm, MintRawTxForm, RawTxForm)
+                    CreateSmartContractRawTxForm, MintRawTxForm, RawTxForm,
+                    CompileSmartContractForm)
+
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +128,26 @@ class CreateLicenseRawTxView(View):
 
         license_hex = encode_license(license)
         return mk_op_return_script(license_hex)
+
+
+class CompileSmartContractView(CsrfExemptMixin, View):
+ 
+    def post(self, request, *args, **kwargs):
+        form = CompileSmartContractForm(request.POST)
+        if form.is_valid():
+            source_code = form.cleaned_data['source_code']
+            contract_name = form.cleaned_data['contract_name']
+
+            output = compile_source(source_code)
+            byte_code = output[contract_name]['bin']
+            interface = output[contract_name]['abi']
+            response = {'byte_code': byte_code, 'interface': interface}
+            return JsonResponse(response)
+
+        else:
+            errors = ', '.join(reduce(lambda x, y: x + y, form.errors.values()))
+            response = {'error': errors}
+            return JsonResponse(response, status=httplib.BAD_REQUEST)
 
 
 class CreateSmartContractRawTxView(CsrfExemptMixin, View):
