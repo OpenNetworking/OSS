@@ -5,3 +5,4 @@ gcoin-rpc
 mock==1.0.1
 MySQL-python==1.2.5
 tornado==4.4.1
+py-solc==1.0.0

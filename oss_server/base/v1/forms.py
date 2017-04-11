@@ -41,6 +41,17 @@ class CreateLicenseRawTxForm(forms.Form):
                                          'max_value': '`upper_limit` should be less than or equal to %(limit_value)s'
                                      })
 
+class CompileSmartContractForm(forms.Form):
+    source_code = forms.CharField(max_length=128000,
+                           error_messages={
+                               'required': '`source_code` is required',
+                               'max_length': 'length of `source_code` should not exceed %(limit_value)s'
+                           })
+    contract_name = forms.CharField(max_length=32,
+                           error_messages={
+                               'required': '`contract_name` is required',
+                               'max_length': 'length of `contract_name` should not exceed %(limit_value)s'
+                           })
 
 class CreateSmartContractRawTxForm(forms.Form):
     from_address = AddressField(error_messages={
