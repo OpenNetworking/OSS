@@ -84,6 +84,8 @@ class TxNotifyDaemon(GcoinRPCMixin):
                 'notification_id': notification.id,
                 'subscription_id': notification.subscription.id,
                 'tx_hash': notification.subscription.tx_hash,
+                'confirmation': notification.subscription.confirmation_count,
+                'confirmation_time': notification.subscription.get_notify_block_time()
             }
             request = HTTPRequest(
                           url=notification.subscription.callback_url,

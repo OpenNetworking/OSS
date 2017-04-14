@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 from collections import OrderedDict
 
-import uuid
-
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
+import uuid
+from django.db import connection
 
 from .validators import validate_address
 
@@ -41,6 +41,27 @@ class TxSubscription(Subscription):
     confirmation_count = models.PositiveIntegerField(
         validators=[MinValueValidator(1, 'confirmation_count should be greater than 1')]
     )
+
+    def get_notify_block_time(self):
+        uuid_hex = self.id.hex
+        cursor = connection.cursor()
+        time = 0
+        try:
+            cursor.execute("select blocktable.time as 'time' \
+                from explorer_block as blocktable, \
+                ( \
+                    select block.height as height, sub.confirmation_count as confirmation \
+                    from notification_txsubscription sub \
+                    left join explorer_tx tx on (tx.hash = sub.tx_hash) \
+                    left join explorer_block block on (block.id = tx.block_id) \
+                    where sub.id = '" + uuid_hex + "' \
+                ) as target \
+                where blocktable.height = target.height + (target.confirmation - 1)")
+            time = str(cursor.fetchone()[0])
+        finally:
+            cursor.close()
+        return time
+
 
     def as_dict(self):
         return OrderedDict([
